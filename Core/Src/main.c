@@ -22,7 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,7 +44,22 @@
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
+enum _state
+{
+state_0 = 0,
+state_1,
+state_2,
 
+};
+
+int8_t state = 0;
+int8_t force_print_menu = 1;
+
+
+char TxDataBuffer[32] =
+{ 0 };
+char RxDataBuffer[32] =
+{ 0 };
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -51,7 +67,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+void UARTRecieveAndResponsePolling();
+int16_t UARTRecieveIT();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -89,16 +106,200 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  	{
+    char temp[]="HELLO WORLD\r\n please type something to test UART\r\n";
+    HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
+    }
+  	uint32_t TimeStamp = 0;
+  	uint32_t frequency = 5;
+  	uint8_t LED_mode = 1;
+  	uint8_t BlueButton[2];
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  		HAL_UART_Receive_IT(&huart2,  (uint8_t*)RxDataBuffer, 32);
+	  		int16_t inputchar = UARTRecieveIT();
+	  		BlueButton[1] = BlueButton[0];
+	  		BlueButton[0] = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
+
+	  		if (state == 0)
+	  		{
+	  			if (force_print_menu == 1)
+	  			{
+	  				{
+	  				    char temp[]="*************************\r\n"
+	  				    		"Menu\r\n"
+	  				    		"*************************\r\n"
+	  				    		"0 : LED Control\r\n"
+	  				    		"1 : button Status\r\n"
+	  				    		"*************************\r\n";
+	  				    HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
+	  				}
+	  				force_print_menu = 0;
+	  			}
+
+	  			if (inputchar == '0')
+	  			{
+	  				state = 1;
+	  				force_print_menu = 1;
+	  			}
+	  			else if (inputchar == '1')
+				{
+					state = 2;
+					force_print_menu = 1;
+				}
+	  			else if (inputchar == -1)
+				{
+
+				}
+	  			else
+				{
+					force_print_menu = 1;
+				}
+	  		}
+
+
+	  		else if (state == 1)
+			{
+	  			if (force_print_menu == 1)
+				{
+	  				{
+	  				    char temp[]="*************************\r\n"
+	  				    		"Menu0\r\n"
+	  				    		"*************************\r\n"
+	  				    		"a:Speed Up +1Hz\r\n"
+	  				    		"s:Speed Down -1Hz\r\n"
+	  				    		"d:On/off\r\n"
+	  				    		"x:back\r\n"
+	  				    		"*************************\r\n";
+	  				    HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
+	  				}
+					force_print_menu = 0;
+				}
+	  			if (inputchar == 'a')
+				{
+	  				frequency += 1;
+				}
+				else if (inputchar == 's')
+				{
+					if (frequency != 0)
+					{
+						frequency -= 1;
+					}
+				}
+				else if (inputchar == 'd')
+				{
+					if (LED_mode == 1)
+					{LED_mode = 0;}
+					else if (LED_mode == 0)
+					{LED_mode = 1;}
+				}
+				else if (inputchar == 'x')
+				{
+					state = 0;
+					force_print_menu = 1;
+				}
+				else if (inputchar == -1)
+				{
+
+				}
+				else
+				{
+					force_print_menu = 1;
+				}
+			}
+
+
+	  		else if (state == 2)
+			{
+	  			if (force_print_menu == 1)
+				{
+	  				{
+	  				    char temp[]="*************************\r\n"
+	  				    		"Menu0\r\n"
+	  				    		"*************************\r\n"
+	  				    		"x:back\r\n"
+	  				    		"[if button Press/UnPress] show button status\r\n"
+	  				    		"*************************\r\n";
+	  				    HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
+	  				}
+					force_print_menu = 0;
+				}
+
+	  			if (inputchar == 'x')
+				{
+					state = 0;
+					force_print_menu = 1;
+				}
+	  			else if (inputchar == -1)
+				{
+
+				}
+	  			else
+				{
+					force_print_menu = 1;
+				}
+
+	  			if ((BlueButton[1] == 1)&&(BlueButton[0] == 0))
+	  			{
+	  				{
+						char temp[]="*************************\r\n"
+								"Blue_Button_status : Press\r\n"
+								"*************************\r\n";
+						HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
+	  				}
+	  			}
+	  			else if ((BlueButton[1] == 0)&&(BlueButton[0] == 1))
+				{
+					{
+						char temp[]="*************************\r\n"
+								"Blue_Button_status : UnPress\r\n"
+								"*************************\r\n";
+						HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
+					}
+				}
+
+			}
+
+
+
+	  		if (LED_mode == 1)
+			{
+	  			if (frequency == 0)
+	  			{
+
+	  			}
+	  			else
+	  			{
+					if(HAL_GetTick() - TimeStamp >= 500/(frequency))
+					{
+						TimeStamp = HAL_GetTick();
+						HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+					}
+	  			}
+			}
+
+			else if (LED_mode == 0)
+			{
+
+				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin,0);
+
+			}
+
+
+
+
+
+
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
   }
   /* USER CODE END 3 */
 }
@@ -214,6 +415,38 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void UARTRecieveAndResponsePolling()
+{
+	char Recieve[32]={0};
+
+	HAL_UART_Receive(&huart2, (uint8_t*)Recieve, 32, 1000);
+
+	sprintf(TxDataBuffer, "Received:[%s]\r\n", Recieve);
+	HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
+
+}
+
+
+int16_t UARTRecieveIT()
+{
+	static uint32_t dataPos =0;
+	int16_t data=-1;
+	if(huart2.RxXferSize - huart2.RxXferCount!=dataPos)
+	{
+		data=RxDataBuffer[dataPos];
+		dataPos= (dataPos+1)%huart2.RxXferSize;
+	}
+	return data;
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	//sprintf(TxDataBuffer, "Received:[%s]\r\n", RxDataBuffer);
+	//HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
+	//HAL_UART_Transmit_IT(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer));
+
+}
 
 /* USER CODE END 4 */
 
