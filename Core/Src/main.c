@@ -54,7 +54,11 @@ state_2,
 
 int8_t state = 0;
 int8_t force_print_menu = 1;
-
+uint32_t TimeStamp = 0;
+uint32_t frequency = 5;
+uint8_t LED_mode = 1;
+uint8_t BlueButton[2];
+uint8_t pinstate_hack = 0;
 
 char TxDataBuffer[32] =
 { 0 };
@@ -110,10 +114,7 @@ int main(void)
     char temp[]="HELLO WORLD\r\n please type something to test UART\r\n";
     HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
     }
-  	uint32_t TimeStamp = 0;
-  	uint32_t frequency = 5;
-  	uint8_t LED_mode = 1;
-  	uint8_t BlueButton[2];
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -193,7 +194,7 @@ int main(void)
 				else if (inputchar == 'd')
 				{
 					if (LED_mode == 1)
-					{LED_mode = 0;}
+					{LED_mode = 0;					}
 					else if (LED_mode == 0)
 					{LED_mode = 1;}
 				}
